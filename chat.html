@@ -65,6 +65,11 @@
           <div class="card card-elev shadow-sm">
             <div class="card-body">
               <h2 class="h6 mb-3">Send inn</h2>
+              <div id="captcha" class="mb-3">
+                <label class="form-label" for="captcha-answer" id="captcha-label">Hva heter den eneste jenta i 2IM?</label>
+                <input id="captcha-answer" class="form-control" type="text" />
+                <button id="captcha-check" class="btn btn-secondary mt-2" type="button">Sjekk svar</button>
+              </div>
               <form id="form" class="needs-validation" novalidate>
                 <div class="mb-3">
                   <label class="form-label" for="name">Navn</label>
@@ -142,6 +147,22 @@
       const msgsEl = document.getElementById("msgs");
       const statusEl = document.getElementById("status");
       const countEl = document.getElementById("count");
+      const captchaInput = document.getElementById("captcha-answer");
+      const captchaCheckBtn = document.getElementById("captcha-check");
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      // Disable form submission initially
+      submitBtn.disabled = true;
+
+      captchaCheckBtn.addEventListener("click", () => {
+        if (captchaInput.value.trim().toLowerCase() === "anmol") {
+          document.getElementById("captcha").style.display = "none";
+          submitBtn.disabled = false;
+          statusEl.textContent = "Du kan nå sende meldinger.";
+        } else {
+          statusEl.textContent = "Feil svar, prøv igjen.";
+        }
+      });
 
       // Gjør tekst trygg for visning (hindrer HTML-injeksjon)
       function esc(s) {
