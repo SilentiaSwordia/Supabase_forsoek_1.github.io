@@ -65,6 +65,11 @@
           <div class="card card-elev shadow-sm">
             <div class="card-body">
               <h2 class="h6 mb-3">Send inn</h2>
+              <div id="captcha" class="mb-3">
+                <label class="form-label" for="captcha-answer" id="captcha-label">Hva er 5 + 3?</label>
+                <input id="captcha-answer" class="form-control" type="number" />
+                <button id="captcha-check" class="btn btn-secondary mt-2" type="button">Sjekk svar</button>
+              </div>
               <form id="form" class="needs-validation" novalidate>
                 <div class="mb-3">
                   <label class="form-label" for="name">Navn</label>
@@ -142,6 +147,34 @@
       const msgsEl = document.getElementById("msgs");
       const statusEl = document.getElementById("status");
       const countEl = document.getElementById("count");
+      const captchaInput = document.getElementById("captcha-answer");
+      const captchaCheckBtn = document.getElementById("captcha-check");
+      const captchaLabel = document.getElementById("captcha-label");
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      let captchaNum1, captchaNum2, captchaAnswer;
+
+      function generateCaptcha() {
+        captchaNum1 = Math.floor(Math.random() * 10);
+        captchaNum2 = Math.floor(Math.random() * 10);
+        captchaAnswer = captchaNum1 + captchaNum2;
+        captchaLabel.textContent = `Hva er ${captchaNum1} + ${captchaNum2}?`;
+      }
+
+      // Disable form submission initially
+      submitBtn.disabled = true;
+      generateCaptcha();
+
+      captchaCheckBtn.addEventListener("click", () => {
+        if (parseInt(captchaInput.value) === captchaAnswer) {
+          document.getElementById("captcha").style.display = "none";
+          submitBtn.disabled = false;
+          statusEl.textContent = "Du kan nå sende meldinger.";
+        } else {
+          statusEl.textContent = "Feil svar, prøv igjen.";
+          generateCaptcha();
+        }
+      });
 
       // Gjør tekst trygg for visning (hindrer HTML-injeksjon)
       function esc(s) {
