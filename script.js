@@ -2,8 +2,16 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 /** 1) Koble til Supabase (BYTT til dine nøkler) */
 const supabase = createClient(
-  "https://tbywtsnllvkoiuxnxjpq.supabase.co", // ← Project URL
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRieXd0c25sbHZrb2l1eG54anBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyMDc0MDEsImV4cCI6MjA3Njc4MzQwMX0.RvPYOW13Ypmi10zSyPDJgITdzHZpil2FBS6E7GzIWvs" // ← anon public key
+  "https://tbywtsnllvkoiuxnxjpq.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRieXd0c25sbHZrb2l1eG54anBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyMDc0MDEsImV4cCI6MjA3Njc4MzQwMX0.RvPYOW13Ypmi10zSyPDJgITdzHZpil2FBS6E7GzIWvs",
+  {
+    auth: {
+      storage: sessionStorage, // <-- Dette er magien!
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+  }
 );
 
 /** 2) Finn elementer */
@@ -49,18 +57,31 @@ tabButtons.forEach((btn) => {
 
 /** 5) Oppdater UI (bruker + rolle) */
 async function refreshAuthUI() {
+  // BRUK getSession() I STEDET FOR getUser()
+  // Denne returnerer bare null hvis du ikke er logget inn, uten å lage rød error.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
 
-  if (!user) {
+  // 1. Sjekk om vi faktisk har en bruker-sesjon
+  if (!session) {
+    // Ingen logget inn -> Vis utlogget-skjerm
     loggedOut.style.display = "";
     loggedIn.style.display = "none";
     userBadge.textContent = "";
-    return;
+
+    // Skjul admin-panelet hvis det finnes
+    const adminSection = document.getElementById("adminSection");
+    if (adminSection) adminSection.style.display = "none";
+
+    return; // Stopp funksjonen her
   }
 
-  // Les rolle fra "profiles" (RLS: bruker kan bare lese sin egen rad)
+  // 2. Hvis vi kommer hit, ER vi logget inn.
+  const user = session.user;
+
+  // Hent profil og rolle fra databasen
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
@@ -68,11 +89,25 @@ async function refreshAuthUI() {
     .maybeSingle();
 
   const role = profile?.role ?? "user";
+
+  // 3. Oppdater UI for innlogget bruker
   loggedOut.style.display = "none";
   loggedIn.style.display = "";
   whoami.textContent = `Innlogget som ${user.email}`;
   roleBadge.textContent = `Rolle: ${role}`;
   userBadge.textContent = role === "admin" ? "Admin" : "Innlogget";
+
+  // 4. Admin-logikk
+  const adminSection = document.getElementById("adminSection");
+  if (role === "admin") {
+    if (adminSection) {
+      adminSection.style.display = "block";
+      // Hvis du la inn funksjonen for å laste brukere:
+      if (typeof loadAdminUserList === "function") loadAdminUserList();
+    }
+  } else {
+    if (adminSection) adminSection.style.display = "none";
+  }
 }
 
 /**  6) Logg inn */
